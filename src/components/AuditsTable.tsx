@@ -3,7 +3,8 @@ import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown } from "lucide-reac
 import { PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";
-import { MOCK_AUDITS, IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
+import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
+import { useAudits } from "@/lib/audit-store";
 
 export function AuditsTable({ title, subtitle, filterType }: { title: string; subtitle: string; filterType?: AuditType }) {
   const [q, setQ] = useState("");
@@ -14,8 +15,9 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
   const [detail, setDetail] = useState<AuditRecord | null>(null);
   const perPage = 10;
 
+  const all = useAudits();
   const filtered = useMemo(() => {
-    const base = filterType ? MOCK_AUDITS.filter((a) => a.type === filterType) : MOCK_AUDITS;
+    const base = filterType ? all.filter((a) => a.type === filterType) : all;
     return base
       .filter((a) =>
         (!q || a.client.toLowerCase().includes(q.toLowerCase()) || a.title.toLowerCase().includes(q.toLowerCase()) || a.id.toLowerCase().includes(q.toLowerCase())) &&
@@ -28,7 +30,7 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
         if (av > bv) return sort.dir === "asc" ? 1 : -1;
         return 0;
       });
-  }, [q, imu, status, sort, filterType]);
+  }, [q, imu, status, sort, filterType, all]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const view = filtered.slice((page - 1) * perPage, page * perPage);

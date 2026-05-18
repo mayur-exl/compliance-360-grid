@@ -10,8 +10,9 @@ import {
 import { KpiCard, PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import {
   ANOMALIES_BY_TYPE, CLIENT_STATS, COMPLETION_TREND, HIGH_RISK_CLIENTS,
-  MONTHLY_VOLUME, RECENT_ANOMALIES, MOCK_AUDITS,
+  MONTHLY_VOLUME, RECENT_ANOMALIES,
 } from "@/lib/mock-data";
+import { useAudits } from "@/lib/audit-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — Compliance 360" }] }),
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  const MOCK_AUDITS = useAudits();
   const total = MOCK_AUDITS.length;
   const completed = MOCK_AUDITS.filter((a) => a.status === "Completed").length;
   const pending = MOCK_AUDITS.filter((a) => a.status !== "Completed").length;

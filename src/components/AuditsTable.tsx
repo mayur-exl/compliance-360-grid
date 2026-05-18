@@ -6,10 +6,11 @@ import { Modal } from "@/components/Modal";
 import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
 import { useAudits } from "@/lib/audit-store";
 
-export function AuditsTable({ title, subtitle, filterType }: { title: string; subtitle: string; filterType?: AuditType }) {
+export function AuditsTable({ title, subtitle, filterType, initialStatus = "", initialMinAnomalies = 0 }: { title: string; subtitle: string; filterType?: AuditType; initialStatus?: string; initialMinAnomalies?: number }) {
   const [q, setQ] = useState("");
   const [imu, setImu] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(initialStatus);
+  const [minAnom, setMinAnom] = useState(initialMinAnomalies);
   const [sort, setSort] = useState<{ key: keyof AuditRecord; dir: "asc" | "desc" }>({ key: "reviewDate", dir: "desc" });
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<AuditRecord | null>(null);

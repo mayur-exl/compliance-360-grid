@@ -23,7 +23,8 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
       .filter((a) =>
         (!q || a.client.toLowerCase().includes(q.toLowerCase()) || a.title.toLowerCase().includes(q.toLowerCase()) || a.id.toLowerCase().includes(q.toLowerCase())) &&
         (!imu || a.imu === imu) &&
-        (!status || a.status === status)
+        (!status || a.status === status) &&
+        (a.anomalies >= minAnom)
       )
       .sort((a, b) => {
         const av = a[sort.key]; const bv = b[sort.key];
@@ -31,7 +32,7 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
         if (av > bv) return sort.dir === "asc" ? 1 : -1;
         return 0;
       });
-  }, [q, imu, status, sort, filterType, all]);
+  }, [q, imu, status, minAnom, sort, filterType, all]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const view = filtered.slice((page - 1) * perPage, page * perPage);

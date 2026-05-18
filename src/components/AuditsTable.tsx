@@ -15,8 +15,9 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
   const [detail, setDetail] = useState<AuditRecord | null>(null);
   const perPage = 10;
 
+  const all = useAudits();
   const filtered = useMemo(() => {
-    const base = filterType ? MOCK_AUDITS.filter((a) => a.type === filterType) : MOCK_AUDITS;
+    const base = filterType ? all.filter((a) => a.type === filterType) : all;
     return base
       .filter((a) =>
         (!q || a.client.toLowerCase().includes(q.toLowerCase()) || a.title.toLowerCase().includes(q.toLowerCase()) || a.id.toLowerCase().includes(q.toLowerCase())) &&

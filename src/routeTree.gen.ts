@@ -10,33 +10,68 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReviewsLarRouteImport } from './routes/reviews.lar'
+import { Route as ReviewsEndpointRouteImport } from './routes/reviews.endpoint'
+import { Route as ReviewsContractualRouteImport } from './routes/reviews.contractual'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewsLarRoute = ReviewsLarRouteImport.update({
+  id: '/reviews/lar',
+  path: '/reviews/lar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsEndpointRoute = ReviewsEndpointRouteImport.update({
+  id: '/reviews/endpoint',
+  path: '/reviews/endpoint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsContractualRoute = ReviewsContractualRouteImport.update({
+  id: '/reviews/contractual',
+  path: '/reviews/contractual',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/reviews/contractual': typeof ReviewsContractualRoute
+  '/reviews/endpoint': typeof ReviewsEndpointRoute
+  '/reviews/lar': typeof ReviewsLarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reviews/contractual': typeof ReviewsContractualRoute
+  '/reviews/endpoint': typeof ReviewsEndpointRoute
+  '/reviews/lar': typeof ReviewsLarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/reviews/contractual': typeof ReviewsContractualRoute
+  '/reviews/endpoint': typeof ReviewsEndpointRoute
+  '/reviews/lar': typeof ReviewsLarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/reviews/contractual' | '/reviews/endpoint' | '/reviews/lar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/reviews/contractual' | '/reviews/endpoint' | '/reviews/lar'
+  id:
+    | '__root__'
+    | '/'
+    | '/reviews/contractual'
+    | '/reviews/endpoint'
+    | '/reviews/lar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ReviewsContractualRoute: typeof ReviewsContractualRoute
+  ReviewsEndpointRoute: typeof ReviewsEndpointRoute
+  ReviewsLarRoute: typeof ReviewsLarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +83,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reviews/lar': {
+      id: '/reviews/lar'
+      path: '/reviews/lar'
+      fullPath: '/reviews/lar'
+      preLoaderRoute: typeof ReviewsLarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews/endpoint': {
+      id: '/reviews/endpoint'
+      path: '/reviews/endpoint'
+      fullPath: '/reviews/endpoint'
+      preLoaderRoute: typeof ReviewsEndpointRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews/contractual': {
+      id: '/reviews/contractual'
+      path: '/reviews/contractual'
+      fullPath: '/reviews/contractual'
+      preLoaderRoute: typeof ReviewsContractualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ReviewsContractualRoute: ReviewsContractualRoute,
+  ReviewsEndpointRoute: ReviewsEndpointRoute,
+  ReviewsLarRoute: ReviewsLarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -228,15 +228,17 @@ function Dashboard() {
             ) : (
               <ul className="space-y-3">
                 {m.recentAnomalies.map((a) => (
-                  <li key={a.id} className="border-l-2 border-primary pl-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="warning">{a.type}</Badge>
-                      <span className="text-[11px] text-muted-foreground font-mono">{a.id}</span>
-                    </div>
-                    <div className="mt-1 text-sm font-medium truncate">{a.client}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {a.anomalies} issue{a.anomalies === 1 ? "" : "s"} · {a.compliance}% compliant · {a.reviewDate}
-                    </div>
+                  <li key={a.id}>
+                    <Link to="/db/report/$id" params={{ id: a.id }} className="block border-l-2 border-primary pl-3 hover:bg-muted/40 rounded-r-md py-1 -my-1 transition">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="warning">{a.type}</Badge>
+                        <span className="text-[11px] text-muted-foreground font-mono">{a.id}</span>
+                      </div>
+                      <div className="mt-1 text-sm font-medium truncate">{a.client}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {a.anomalies} issue{a.anomalies === 1 ? "" : "s"} · {a.compliance}% compliant · {a.reviewDate}
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>

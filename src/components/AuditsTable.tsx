@@ -132,7 +132,10 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
               <Info label="Compliance" value={`${detail.compliance}%`} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline"><Download className="h-4 w-4" /> Download Report</Button>
+              <Link to="/db/report/$id" params={{ id: detail.id }} onClick={() => setDetail(null)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90">
+                <FileText className="h-4 w-4" /> Open Full Report
+              </Link>
             </div>
           </div>
         )}

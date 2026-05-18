@@ -113,7 +113,24 @@ export function ReviewWorkflow({ cfg }: { cfg: Cfg }) {
           <ResultsView
             state={state} results={results} score={score} issues={issues}
             cfg={cfg} saved={phase === "saved"}
-            onSave={() => setPhase("saved")}
+            onSave={() => {
+              const id = nextAuditId();
+              const anomalies = results.filter((r) => r.status !== "Compliant").length;
+              auditStore.add({
+                id,
+                title: `${cfg.type} Review – ${state.client}`,
+                client: state.client,
+                imu: state.imu,
+                sgu: state.sgu,
+                type: cfg.type,
+                status: "Completed",
+                anomalies,
+                compliance: score,
+                reviewDate: new Date().toISOString().slice(0, 10),
+                reportUrl: `/reports/${id}.pdf`,
+              });
+              setPhase("saved");
+            }}
             onClose={() => { setOpen(false); reset(); }}
           />
         )}

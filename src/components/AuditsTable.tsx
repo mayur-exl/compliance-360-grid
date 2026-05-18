@@ -3,7 +3,8 @@ import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown } from "lucide-reac
 import { PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";
-import { MOCK_AUDITS, IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
+import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
+import { useAudits } from "@/lib/audit-store";
 
 export function AuditsTable({ title, subtitle, filterType }: { title: string; subtitle: string; filterType?: AuditType }) {
   const [q, setQ] = useState("");

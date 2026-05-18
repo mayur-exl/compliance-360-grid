@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown, FileText } from "lucide-react";
 import { PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";

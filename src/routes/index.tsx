@@ -168,9 +168,9 @@ function Dashboard() {
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{a.reviewDate}</td>
                       <td className="px-3 py-2">
-                        <a href={a.reportUrl} className="inline-flex items-center gap-1 text-xs text-secondary hover:underline">
-                          {a.id}.pdf <ExternalLink className="h-3 w-3" />
-                        </a>
+                        <Link to="/db/report/$id" params={{ id: a.id }} className="inline-flex items-center gap-1 text-xs text-secondary hover:underline">
+                          View report <ExternalLink className="h-3 w-3" />
+                        </Link>
                       </td>
                     </tr>
                   ))}

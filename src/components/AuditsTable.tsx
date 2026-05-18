@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
-import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Search, Download, FileSpreadsheet, Eye, ArrowUpDown, FileText } from "lucide-react";
 import { PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";
 import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
 import { useAudits } from "@/lib/audit-store";
 
-export function AuditsTable({ title, subtitle, filterType }: { title: string; subtitle: string; filterType?: AuditType }) {
+export function AuditsTable({ title, subtitle, filterType, initialStatus = "", initialMinAnomalies = 0 }: { title: string; subtitle: string; filterType?: AuditType; initialStatus?: string; initialMinAnomalies?: number }) {
   const [q, setQ] = useState("");
   const [imu, setImu] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(initialStatus);
+  const [minAnom, setMinAnom] = useState(initialMinAnomalies);
   const [sort, setSort] = useState<{ key: keyof AuditRecord; dir: "asc" | "desc" }>({ key: "reviewDate", dir: "desc" });
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<AuditRecord | null>(null);
@@ -22,7 +24,8 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
       .filter((a) =>
         (!q || a.client.toLowerCase().includes(q.toLowerCase()) || a.title.toLowerCase().includes(q.toLowerCase()) || a.id.toLowerCase().includes(q.toLowerCase())) &&
         (!imu || a.imu === imu) &&
-        (!status || a.status === status)
+        (!status || a.status === status) &&
+        (a.anomalies >= minAnom)
       )
       .sort((a, b) => {
         const av = a[sort.key]; const bv = b[sort.key];
@@ -30,7 +33,7 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
         if (av > bv) return sort.dir === "asc" ? 1 : -1;
         return 0;
       });
-  }, [q, imu, status, sort, filterType, all]);
+  }, [q, imu, status, minAnom, sort, filterType, all]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const view = filtered.slice((page - 1) * perPage, page * perPage);
@@ -130,7 +133,10 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
               <Info label="Compliance" value={`${detail.compliance}%`} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline"><Download className="h-4 w-4" /> Download Report</Button>
+              <Link to="/db/report/$id" params={{ id: detail.id }} onClick={() => setDetail(null)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90">
+                <FileText className="h-4 w-4" /> Open Full Report
+              </Link>
             </div>
           </div>
         )}

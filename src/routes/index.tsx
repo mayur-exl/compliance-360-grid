@@ -44,10 +44,18 @@ function Dashboard() {
 
       {/* KPI tiles */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Audits" value={String(m.total)} delta={m.deltaTotal} icon={ClipboardCheck} accent="primary" progress={Math.min(100, m.total)} />
-        <KpiCard label="Completion %" value={`${m.completionPct}%`} delta={m.deltaCompletion} icon={CheckCircle2} accent="success" progress={m.completionPct} />
-        <KpiCard label="Avg Compliance" value={`${m.avgCompliance}%`} delta={m.deltaCompliance} icon={TrendingUp} accent="warning" progress={m.avgCompliance} />
-        <KpiCard label="Open Findings" value={String(m.openFindings)} delta={m.deltaFindings} icon={AlertTriangle} accent="secondary" progress={Math.min(100, m.openFindings)} />
+        <Link to="/db/overall" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Total Audits" value={String(m.total)} delta={m.deltaTotal} icon={ClipboardCheck} accent="primary" progress={Math.min(100, m.total)} />
+        </Link>
+        <Link to="/db/overall" search={{ status: "Completed", minAnomalies: 0 }} className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Completion %" value={`${m.completionPct}%`} delta={m.deltaCompletion} icon={CheckCircle2} accent="success" progress={m.completionPct} />
+        </Link>
+        <Link to="/db/overall" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Avg Compliance" value={`${m.avgCompliance}%`} delta={m.deltaCompliance} icon={TrendingUp} accent="warning" progress={m.avgCompliance} />
+        </Link>
+        <Link to="/db/overall" search={{ status: "", minAnomalies: 1 }} className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Open Findings" value={String(m.openFindings)} delta={m.deltaFindings} icon={AlertTriangle} accent="secondary" progress={Math.min(100, m.openFindings)} />
+        </Link>
       </div>
 
       {/* Reviews section */}
@@ -160,9 +168,9 @@ function Dashboard() {
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{a.reviewDate}</td>
                       <td className="px-3 py-2">
-                        <a href={a.reportUrl} className="inline-flex items-center gap-1 text-xs text-secondary hover:underline">
-                          {a.id}.pdf <ExternalLink className="h-3 w-3" />
-                        </a>
+                        <Link to="/db/report/$id" params={{ id: a.id }} className="inline-flex items-center gap-1 text-xs text-secondary hover:underline">
+                          View report <ExternalLink className="h-3 w-3" />
+                        </Link>
                       </td>
                     </tr>
                   ))}
@@ -220,15 +228,17 @@ function Dashboard() {
             ) : (
               <ul className="space-y-3">
                 {m.recentAnomalies.map((a) => (
-                  <li key={a.id} className="border-l-2 border-primary pl-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="warning">{a.type}</Badge>
-                      <span className="text-[11px] text-muted-foreground font-mono">{a.id}</span>
-                    </div>
-                    <div className="mt-1 text-sm font-medium truncate">{a.client}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {a.anomalies} issue{a.anomalies === 1 ? "" : "s"} · {a.compliance}% compliant · {a.reviewDate}
-                    </div>
+                  <li key={a.id}>
+                    <Link to="/db/report/$id" params={{ id: a.id }} className="block border-l-2 border-primary pl-3 hover:bg-muted/40 rounded-r-md py-1 -my-1 transition">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="warning">{a.type}</Badge>
+                        <span className="text-[11px] text-muted-foreground font-mono">{a.id}</span>
+                      </div>
+                      <div className="mt-1 text-sm font-medium truncate">{a.client}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {a.anomalies} issue{a.anomalies === 1 ? "" : "s"} · {a.compliance}% compliant · {a.reviewDate}
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>

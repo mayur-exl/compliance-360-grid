@@ -20,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  const MOCK_AUDITS = useAudits();
   const total = MOCK_AUDITS.length;
   const completed = MOCK_AUDITS.filter((a) => a.status === "Completed").length;
   const pending = MOCK_AUDITS.filter((a) => a.status !== "Completed").length;

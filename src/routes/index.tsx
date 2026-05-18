@@ -44,10 +44,18 @@ function Dashboard() {
 
       {/* KPI tiles */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Audits" value={String(m.total)} delta={m.deltaTotal} icon={ClipboardCheck} accent="primary" progress={Math.min(100, m.total)} />
-        <KpiCard label="Completion %" value={`${m.completionPct}%`} delta={m.deltaCompletion} icon={CheckCircle2} accent="success" progress={m.completionPct} />
-        <KpiCard label="Avg Compliance" value={`${m.avgCompliance}%`} delta={m.deltaCompliance} icon={TrendingUp} accent="warning" progress={m.avgCompliance} />
-        <KpiCard label="Open Findings" value={String(m.openFindings)} delta={m.deltaFindings} icon={AlertTriangle} accent="secondary" progress={Math.min(100, m.openFindings)} />
+        <Link to="/db/overall" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Total Audits" value={String(m.total)} delta={m.deltaTotal} icon={ClipboardCheck} accent="primary" progress={Math.min(100, m.total)} />
+        </Link>
+        <Link to="/db/overall" search={{ status: "Completed", minAnomalies: 0 }} className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Completion %" value={`${m.completionPct}%`} delta={m.deltaCompletion} icon={CheckCircle2} accent="success" progress={m.completionPct} />
+        </Link>
+        <Link to="/db/overall" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Avg Compliance" value={`${m.avgCompliance}%`} delta={m.deltaCompliance} icon={TrendingUp} accent="warning" progress={m.avgCompliance} />
+        </Link>
+        <Link to="/db/overall" search={{ status: "", minAnomalies: 1 }} className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <KpiCard label="Open Findings" value={String(m.openFindings)} delta={m.deltaFindings} icon={AlertTriangle} accent="secondary" progress={Math.min(100, m.openFindings)} />
+        </Link>
       </div>
 
       {/* Reviews section */}

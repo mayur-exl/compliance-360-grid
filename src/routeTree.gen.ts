@@ -13,6 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReviewsLarRouteImport } from './routes/reviews.lar'
 import { Route as ReviewsEndpointRouteImport } from './routes/reviews.endpoint'
 import { Route as ReviewsContractualRouteImport } from './routes/reviews.contractual'
+import { Route as DbOverallRouteImport } from './routes/db.overall'
+import { Route as DbLarRouteImport } from './routes/db.lar'
+import { Route as DbEndpointRouteImport } from './routes/db.endpoint'
+import { Route as DbContractualRouteImport } from './routes/db.contractual'
+import { Route as ConfigLarRouteImport } from './routes/config.lar'
+import { Route as ConfigEndpointRouteImport } from './routes/config.endpoint'
+import { Route as ConfigContractualRouteImport } from './routes/config.contractual'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,15 +41,64 @@ const ReviewsContractualRoute = ReviewsContractualRouteImport.update({
   path: '/reviews/contractual',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DbOverallRoute = DbOverallRouteImport.update({
+  id: '/db/overall',
+  path: '/db/overall',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DbLarRoute = DbLarRouteImport.update({
+  id: '/db/lar',
+  path: '/db/lar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DbEndpointRoute = DbEndpointRouteImport.update({
+  id: '/db/endpoint',
+  path: '/db/endpoint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DbContractualRoute = DbContractualRouteImport.update({
+  id: '/db/contractual',
+  path: '/db/contractual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigLarRoute = ConfigLarRouteImport.update({
+  id: '/config/lar',
+  path: '/config/lar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigEndpointRoute = ConfigEndpointRouteImport.update({
+  id: '/config/endpoint',
+  path: '/config/endpoint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigContractualRoute = ConfigContractualRouteImport.update({
+  id: '/config/contractual',
+  path: '/config/contractual',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/config/contractual': typeof ConfigContractualRoute
+  '/config/endpoint': typeof ConfigEndpointRoute
+  '/config/lar': typeof ConfigLarRoute
+  '/db/contractual': typeof DbContractualRoute
+  '/db/endpoint': typeof DbEndpointRoute
+  '/db/lar': typeof DbLarRoute
+  '/db/overall': typeof DbOverallRoute
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/config/contractual': typeof ConfigContractualRoute
+  '/config/endpoint': typeof ConfigEndpointRoute
+  '/config/lar': typeof ConfigLarRoute
+  '/db/contractual': typeof DbContractualRoute
+  '/db/endpoint': typeof DbEndpointRoute
+  '/db/lar': typeof DbLarRoute
+  '/db/overall': typeof DbOverallRoute
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
@@ -50,18 +106,54 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/config/contractual': typeof ConfigContractualRoute
+  '/config/endpoint': typeof ConfigEndpointRoute
+  '/config/lar': typeof ConfigLarRoute
+  '/db/contractual': typeof DbContractualRoute
+  '/db/endpoint': typeof DbEndpointRoute
+  '/db/lar': typeof DbLarRoute
+  '/db/overall': typeof DbOverallRoute
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/reviews/contractual' | '/reviews/endpoint' | '/reviews/lar'
+  fullPaths:
+    | '/'
+    | '/config/contractual'
+    | '/config/endpoint'
+    | '/config/lar'
+    | '/db/contractual'
+    | '/db/endpoint'
+    | '/db/lar'
+    | '/db/overall'
+    | '/reviews/contractual'
+    | '/reviews/endpoint'
+    | '/reviews/lar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/reviews/contractual' | '/reviews/endpoint' | '/reviews/lar'
+  to:
+    | '/'
+    | '/config/contractual'
+    | '/config/endpoint'
+    | '/config/lar'
+    | '/db/contractual'
+    | '/db/endpoint'
+    | '/db/lar'
+    | '/db/overall'
+    | '/reviews/contractual'
+    | '/reviews/endpoint'
+    | '/reviews/lar'
   id:
     | '__root__'
     | '/'
+    | '/config/contractual'
+    | '/config/endpoint'
+    | '/config/lar'
+    | '/db/contractual'
+    | '/db/endpoint'
+    | '/db/lar'
+    | '/db/overall'
     | '/reviews/contractual'
     | '/reviews/endpoint'
     | '/reviews/lar'
@@ -69,6 +161,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfigContractualRoute: typeof ConfigContractualRoute
+  ConfigEndpointRoute: typeof ConfigEndpointRoute
+  ConfigLarRoute: typeof ConfigLarRoute
+  DbContractualRoute: typeof DbContractualRoute
+  DbEndpointRoute: typeof DbEndpointRoute
+  DbLarRoute: typeof DbLarRoute
+  DbOverallRoute: typeof DbOverallRoute
   ReviewsContractualRoute: typeof ReviewsContractualRoute
   ReviewsEndpointRoute: typeof ReviewsEndpointRoute
   ReviewsLarRoute: typeof ReviewsLarRoute
@@ -104,11 +203,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewsContractualRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/db/overall': {
+      id: '/db/overall'
+      path: '/db/overall'
+      fullPath: '/db/overall'
+      preLoaderRoute: typeof DbOverallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/db/lar': {
+      id: '/db/lar'
+      path: '/db/lar'
+      fullPath: '/db/lar'
+      preLoaderRoute: typeof DbLarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/db/endpoint': {
+      id: '/db/endpoint'
+      path: '/db/endpoint'
+      fullPath: '/db/endpoint'
+      preLoaderRoute: typeof DbEndpointRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/db/contractual': {
+      id: '/db/contractual'
+      path: '/db/contractual'
+      fullPath: '/db/contractual'
+      preLoaderRoute: typeof DbContractualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/config/lar': {
+      id: '/config/lar'
+      path: '/config/lar'
+      fullPath: '/config/lar'
+      preLoaderRoute: typeof ConfigLarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/config/endpoint': {
+      id: '/config/endpoint'
+      path: '/config/endpoint'
+      fullPath: '/config/endpoint'
+      preLoaderRoute: typeof ConfigEndpointRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/config/contractual': {
+      id: '/config/contractual'
+      path: '/config/contractual'
+      fullPath: '/config/contractual'
+      preLoaderRoute: typeof ConfigContractualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfigContractualRoute: ConfigContractualRoute,
+  ConfigEndpointRoute: ConfigEndpointRoute,
+  ConfigLarRoute: ConfigLarRoute,
+  DbContractualRoute: DbContractualRoute,
+  DbEndpointRoute: DbEndpointRoute,
+  DbLarRoute: DbLarRoute,
+  DbOverallRoute: DbOverallRoute,
   ReviewsContractualRoute: ReviewsContractualRoute,
   ReviewsEndpointRoute: ReviewsEndpointRoute,
   ReviewsLarRoute: ReviewsLarRoute,
@@ -116,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

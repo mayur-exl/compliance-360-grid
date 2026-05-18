@@ -30,7 +30,7 @@ export function AuditsTable({ title, subtitle, filterType }: { title: string; su
         if (av > bv) return sort.dir === "asc" ? 1 : -1;
         return 0;
       });
-  }, [q, imu, status, sort, filterType]);
+  }, [q, imu, status, sort, filterType, all]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const view = filtered.slice((page - 1) * perPage, page * perPage);

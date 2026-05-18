@@ -20,6 +20,7 @@ import { Route as DbContractualRouteImport } from './routes/db.contractual'
 import { Route as ConfigLarRouteImport } from './routes/config.lar'
 import { Route as ConfigEndpointRouteImport } from './routes/config.endpoint'
 import { Route as ConfigContractualRouteImport } from './routes/config.contractual'
+import { Route as DbReportIdRouteImport } from './routes/db.report.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ConfigContractualRoute = ConfigContractualRouteImport.update({
   path: '/config/contractual',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DbReportIdRoute = DbReportIdRouteImport.update({
+  id: '/db/report/$id',
+  path: '/db/report/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
+  '/db/report/$id': typeof DbReportIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
+  '/db/report/$id': typeof DbReportIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/reviews/contractual': typeof ReviewsContractualRoute
   '/reviews/endpoint': typeof ReviewsEndpointRoute
   '/reviews/lar': typeof ReviewsLarRoute
+  '/db/report/$id': typeof DbReportIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/reviews/contractual'
     | '/reviews/endpoint'
     | '/reviews/lar'
+    | '/db/report/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/reviews/contractual'
     | '/reviews/endpoint'
     | '/reviews/lar'
+    | '/db/report/$id'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/reviews/contractual'
     | '/reviews/endpoint'
     | '/reviews/lar'
+    | '/db/report/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   ReviewsContractualRoute: typeof ReviewsContractualRoute
   ReviewsEndpointRoute: typeof ReviewsEndpointRoute
   ReviewsLarRoute: typeof ReviewsLarRoute
+  DbReportIdRoute: typeof DbReportIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfigContractualRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/db/report/$id': {
+      id: '/db/report/$id'
+      path: '/db/report/$id'
+      fullPath: '/db/report/$id'
+      preLoaderRoute: typeof DbReportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,7 +287,18 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewsContractualRoute: ReviewsContractualRoute,
   ReviewsEndpointRoute: ReviewsEndpointRoute,
   ReviewsLarRoute: ReviewsLarRoute,
+  DbReportIdRoute: DbReportIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

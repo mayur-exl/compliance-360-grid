@@ -28,9 +28,10 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 type Filter = { monthKey?: string; monthLabel?: string; type?: AuditType };
 
 function Dashboard() {
-  const audits = useAudits();
+  const live = useAudits();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const audits = mounted ? live : MOCK_AUDITS;
   const [filter, setFilter] = useState<Filter>({});
 
   // Always compute charts from full data

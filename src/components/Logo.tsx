@@ -1,7 +1,7 @@
 export function Logo({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <div className="relative h-9 w-9 shrink-0">
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className="relative h-12 w-12 shrink-0">
         <svg viewBox="0 0 40 40" className="h-full w-full">
           <defs>
             <linearGradient id="cl360" x1="0" y1="0" x2="1" y2="1">
@@ -16,10 +16,10 @@ export function Logo({ className = "", compact = false }: { className?: string; 
       </div>
       {!compact && (
         <div className="leading-tight">
-          <div className="text-[15px] font-bold tracking-tight">
+          <div className="text-[19px] font-bold tracking-tight">
             Compliance<span className="text-primary"> 360</span>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Audit Platform</div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Audit Platform</div>
         </div>
       )}
     </div>

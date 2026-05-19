@@ -40,14 +40,14 @@ function ReportPage() {
   const compliantCount = controls.filter((c) => c.status === "Compliant").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6" id="report-printable">
+      <div className="flex items-center justify-between print:hidden">
         <Link to="/db/overall" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Audit DB
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline"><Download className="h-4 w-4" /> Export PDF</Button>
-          <Button variant="outline"><FileText className="h-4 w-4" /> Export Excel</Button>
+          <Button variant="outline" onClick={() => exportPdf()}><Download className="h-4 w-4" /> Export PDF</Button>
+          <Button variant="outline" onClick={() => exportExcel(audit, controls)}><FileText className="h-4 w-4" /> Export Excel</Button>
         </div>
       </div>
 
@@ -145,4 +145,43 @@ function controlsFor(a: AuditRecord): Ctl[] {
       detail: failed ? "Requires remediation — see attached evidence." : `Validated against ${a.type} baseline.`,
     };
   });
+}
+
+function exportPdf() {
+  // Use the browser's print-to-PDF; print styles below hide chrome.
+  window.print();
+}
+
+function exportExcel(a: AuditRecord, controls: Ctl[]) {
+  const esc = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const meta: Array<[string, string]> = [
+    ["Audit ID", a.id], ["Title", a.title], ["Client", a.client], ["Type", a.type],
+    ["IMU", a.imu], ["SGU", a.sgu], ["Status", a.status], ["Review Date", a.reviewDate],
+    ["Compliance %", String(a.compliance)], ["Anomalies", String(a.anomalies)],
+  ];
+  const metaRows = meta.map(([k, v]) => `<tr><th align="left">${esc(k)}</th><td>${esc(v)}</td></tr>`).join("");
+  const ctlRows = controls.map(c =>
+    `<tr><td>${esc(c.control)}</td><td>${esc(c.status)}</td><td>${esc(c.detail)}</td></tr>`
+  ).join("");
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>${esc(a.id)}</title></head>
+<body>
+<h2>Audit Report — ${esc(a.id)}</h2>
+<table border="1" cellspacing="0" cellpadding="4">${metaRows}</table>
+<br/>
+<h3>Control Validation</h3>
+<table border="1" cellspacing="0" cellpadding="4">
+<thead><tr><th>Control</th><th>Status</th><th>Detail</th></tr></thead>
+<tbody>${ctlRows}</tbody>
+</table>
+</body></html>`;
+  const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${a.id}-report.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

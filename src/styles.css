@@ -128,3 +128,10 @@
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: oklch(0.8 0 0); border-radius: 3px; }
 }
+
+@media print {
+  aside, header, nav, .print\:hidden { display: none !important; }
+  body { background: white !important; color: black !important; }
+  main, #report-printable { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+  .shadow-md, .shadow-sm, .shadow { box-shadow: none !important; }
+}

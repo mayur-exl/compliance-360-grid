@@ -40,14 +40,14 @@ function ReportPage() {
   const compliantCount = controls.filter((c) => c.status === "Compliant").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6" id="report-printable">
+      <div className="flex items-center justify-between print:hidden">
         <Link to="/db/overall" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Audit DB
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline"><Download className="h-4 w-4" /> Export PDF</Button>
-          <Button variant="outline"><FileText className="h-4 w-4" /> Export Excel</Button>
+          <Button variant="outline" onClick={() => exportPdf()}><Download className="h-4 w-4" /> Export PDF</Button>
+          <Button variant="outline" onClick={() => exportExcel(audit, controls)}><FileText className="h-4 w-4" /> Export Excel</Button>
         </div>
       </div>
 

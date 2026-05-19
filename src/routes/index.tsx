@@ -9,7 +9,7 @@ import {
   ArrowUpRight, TrendingUp, TrendingDown, Sparkles, ExternalLink, X,
 } from "lucide-react";
 import { KpiCard, PageHeader, SectionCard, Badge } from "@/components/ui-bits";
-import type { AuditRecord, AuditType } from "@/lib/mock-data";
+import { MOCK_AUDITS, type AuditRecord, type AuditType } from "@/lib/mock-data";
 import { useAudits } from "@/lib/audit-store";
 
 export const Route = createFileRoute("/")({

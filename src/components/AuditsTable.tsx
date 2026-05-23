@@ -28,7 +28,7 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
         (a.anomalies >= minAnom)
       )
       .sort((a, b) => {
-        const av = a[sort.key]; const bv = b[sort.key];
+        const av = a[sort.key] ?? ""; const bv = b[sort.key] ?? "";
         if (av < bv) return sort.dir === "asc" ? -1 : 1;
         if (av > bv) return sort.dir === "asc" ? 1 : -1;
         return 0;

@@ -29,6 +29,32 @@ export const ENDPOINT_BASELINE = [
 
 export type AuditType = "Contractual" | "LAR" | "Endpoint";
 
+export type Frequency = "Monthly" | "Quarterly" | "Half-Yearly" | "Yearly";
+export const FREQUENCY_MONTHS: Record<Frequency, number> = {
+  Monthly: 1, Quarterly: 3, "Half-Yearly": 6, Yearly: 12,
+};
+
+export interface Submission {
+  id: string;
+  date: string;            // ISO date
+  fileName: string;
+  verdict: "Compliant" | "Non-Compliant";
+  notes: string;
+}
+
+export type ControlStatus = "Pending" | "Compliant" | "Non-Compliant" | "Overdue";
+
+export interface ContractualControl {
+  name: string;
+  sectionNumber: string;          // e.g. "§4.2"
+  frequency: Frequency;
+  language: string;               // captured from SOW
+  status: ControlStatus;
+  lastSubmissionDate?: string;
+  nextDueDate: string;            // ISO date
+  submissions: Submission[];
+}
+
 export interface AuditRecord {
   id: string;
   title: string;
@@ -41,6 +67,9 @@ export interface AuditRecord {
   compliance: number;
   reviewDate: string;
   reportUrl: string;
+  contractStartDate?: string;     // ISO date — contractual only
+  documentTitle?: string;         // SOW/MSA title — contractual only
+  controls?: ContractualControl[]; // contractual only
 }
 
 const clients = [

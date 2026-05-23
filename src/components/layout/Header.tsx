@@ -1,7 +1,7 @@
-import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAudits } from "@/lib/audit-store";
+import { useAudits, getReminders } from "@/lib/audit-store";
 import { Link } from "@tanstack/react-router";
 
 export function Header() {
@@ -11,16 +11,29 @@ export function Header() {
   }, [dark]);
 
   const audits = useAudits();
+  const reminders = useMemo(() => getReminders(audits, 10), [audits]);
+
   const notifications = useMemo(() => {
-    const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 5);
-    return recent.map((a) => ({
+    const reminderNotes = reminders.slice(0, 6).map((r) => ({
+      id: `${r.auditId}-${r.control}`,
+      auditId: r.auditId,
+      kind: r.kind === "overdue" ? ("alert" as const) : ("warn" as const),
+      title: r.kind === "overdue"
+        ? `Overdue: ${r.control} (${r.sectionNumber})`
+        : `Artifact due in ${r.daysUntilDue}d: ${r.control}`,
+      subtitle: `${r.client} · ${r.documentTitle ?? ""} · ${r.dueDate}`,
+    }));
+    const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 3).map((a) => ({
       id: a.id,
-      kind: a.anomalies > 0 ? "alert" as const : "ok" as const,
+      auditId: a.id,
+      kind: a.anomalies > 0 ? ("alert" as const) : ("ok" as const),
       title: a.anomalies > 0 ? `${a.anomalies} anomal${a.anomalies === 1 ? "y" : "ies"} in ${a.type}` : `${a.type} audit completed`,
       subtitle: `${a.client} · ${a.reviewDate}`,
     }));
-  }, [audits]);
-  const unread = notifications.filter((n) => n.kind === "alert").length;
+    return [...reminderNotes, ...recent];
+  }, [audits, reminders]);
+  const unread = notifications.filter((n) => n.kind === "alert" || n.kind === "warn").length;
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 px-6 backdrop-blur">
@@ -52,19 +65,27 @@ export function Header() {
               )}
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 p-0">
+          <PopoverContent align="end" className="w-96 p-0">
             <div className="border-b border-border px-4 py-3">
               <div className="text-sm font-semibold">Notifications</div>
-              <div className="text-xs text-muted-foreground">{unread} alerts · {notifications.length} recent</div>
+              <div className="text-xs text-muted-foreground">
+                {reminders.filter((r) => r.kind === "overdue").length} overdue · {reminders.filter((r) => r.kind === "upcoming").length} due ≤10d
+              </div>
             </div>
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto">
               {notifications.length === 0 && (
                 <div className="px-4 py-8 text-center text-xs text-muted-foreground">No notifications</div>
               )}
               {notifications.map((n) => (
-                <Link key={n.id} to="/db/report/$id" params={{ id: n.id }} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
-                  <div className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${n.kind === "alert" ? "bg-destructive/10 text-destructive" : "bg-[color:var(--color-success)]/10 text-[color:var(--color-success)]"}`}>
-                    {n.kind === "alert" ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                <Link key={n.id} to="/db/report/$id" params={{ id: n.auditId }} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
+                  <div className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                    n.kind === "alert" ? "bg-destructive/10 text-destructive"
+                    : n.kind === "warn" ? "bg-[color:var(--color-warning)]/15 text-[color:var(--color-warning)]"
+                    : "bg-[color:var(--color-success)]/10 text-[color:var(--color-success)]"
+                  }`}>
+                    {n.kind === "alert" ? <AlertCircle className="h-3.5 w-3.5" />
+                     : n.kind === "warn" ? <Clock className="h-3.5 w-3.5" />
+                     : <CheckCircle2 className="h-3.5 w-3.5" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium leading-tight">{n.title}</div>
@@ -73,6 +94,7 @@ export function Header() {
                 </Link>
               ))}
             </div>
+
             <div className="border-t border-border px-4 py-2">
               <Link to="/db/overall" className="text-xs font-medium text-primary hover:underline">View all activity →</Link>
             </div>

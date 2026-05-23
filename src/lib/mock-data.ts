@@ -27,6 +27,8 @@ export const ENDPOINT_BASELINE = [
   "VPN Installed",
 ];
 
+export type AuditType = "Contractual" | "LAR" | "Endpoint";
+
 export type Frequency = "Monthly" | "Quarterly" | "Half-Yearly" | "Yearly";
 export const FREQUENCY_MONTHS: Record<Frequency, number> = {
   Monthly: 1, Quarterly: 3, "Half-Yearly": 6, Yearly: 12,

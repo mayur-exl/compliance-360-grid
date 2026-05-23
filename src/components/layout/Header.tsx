@@ -1,7 +1,7 @@
-import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAudits } from "@/lib/audit-store";
+import { useAudits, getReminders } from "@/lib/audit-store";
 import { Link } from "@tanstack/react-router";
 
 export function Header() {
@@ -11,16 +11,29 @@ export function Header() {
   }, [dark]);
 
   const audits = useAudits();
+  const reminders = useMemo(() => getReminders(audits, 10), [audits]);
+
   const notifications = useMemo(() => {
-    const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 5);
-    return recent.map((a) => ({
+    const reminderNotes = reminders.slice(0, 6).map((r) => ({
+      id: `${r.auditId}-${r.control}`,
+      auditId: r.auditId,
+      kind: r.kind === "overdue" ? ("alert" as const) : ("warn" as const),
+      title: r.kind === "overdue"
+        ? `Overdue: ${r.control} (${r.sectionNumber})`
+        : `Artifact due in ${r.daysUntilDue}d: ${r.control}`,
+      subtitle: `${r.client} · ${r.documentTitle ?? ""} · ${r.dueDate}`,
+    }));
+    const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 3).map((a) => ({
       id: a.id,
-      kind: a.anomalies > 0 ? "alert" as const : "ok" as const,
+      auditId: a.id,
+      kind: a.anomalies > 0 ? ("alert" as const) : ("ok" as const),
       title: a.anomalies > 0 ? `${a.anomalies} anomal${a.anomalies === 1 ? "y" : "ies"} in ${a.type}` : `${a.type} audit completed`,
       subtitle: `${a.client} · ${a.reviewDate}`,
     }));
-  }, [audits]);
-  const unread = notifications.filter((n) => n.kind === "alert").length;
+    return [...reminderNotes, ...recent];
+  }, [audits, reminders]);
+  const unread = notifications.filter((n) => n.kind === "alert" || n.kind === "warn").length;
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 px-6 backdrop-blur">

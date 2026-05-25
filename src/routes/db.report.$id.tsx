@@ -49,9 +49,10 @@ function ReportPage() {
           <ArrowLeft className="h-4 w-4" /> Back to Audit DB
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => exportPdf()}><Download className="h-4 w-4" /> Export PDF</Button>
+          <Button variant="outline" onClick={() => exportPdf(audit, controls)}><Download className="h-4 w-4" /> Export PDF</Button>
           <Button variant="outline" onClick={() => exportExcel(audit, controls)}><FileText className="h-4 w-4" /> Export Excel</Button>
         </div>
+
       </div>
 
       <div className="rounded-2xl bg-gradient-to-br from-sidebar to-[#1a1a1a] text-white p-6 shadow-md">

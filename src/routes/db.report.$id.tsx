@@ -4,6 +4,9 @@ import { useAudits } from "@/lib/audit-store";
 import { PageHeader, SectionCard, Badge } from "@/components/ui-bits";
 import { Button } from "@/components/form-bits";
 import { CONTRACTUAL_CONTROLS, LAR_ALLOWED_GROUPS, ENDPOINT_BASELINE, type AuditRecord } from "@/lib/mock-data";
+import { exportExcelSections, exportPdfSections } from "@/lib/exporters";
+import { clientId } from "@/lib/clients";
+
 
 export const Route = createFileRoute("/db/report/$id")({
   head: ({ params }) => ({ meta: [{ title: `Report ${params.id} — Compliance 360` }] }),

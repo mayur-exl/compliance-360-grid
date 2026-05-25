@@ -1,4 +1,4 @@
-import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Bell, Home, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAudits, getReminders } from "@/lib/audit-store";
@@ -46,6 +46,14 @@ export function Header() {
         />
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <Link
+          to="/"
+          className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-card hover:bg-muted transition"
+          aria-label="Home"
+          title="Home"
+        >
+          <Home className="h-4 w-4" />
+        </Link>
         <button
           onClick={() => setDark((d) => !d)}
           className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-card hover:bg-muted transition"
@@ -53,6 +61,7 @@ export function Header() {
         >
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
+
 
         <Popover>
           <PopoverTrigger asChild>

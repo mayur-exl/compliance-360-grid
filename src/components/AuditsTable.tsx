@@ -6,6 +6,9 @@ import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";
 import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
 import { useAudits } from "@/lib/audit-store";
+import { exportExcelSections, exportPdfSections } from "@/lib/exporters";
+import { clientId } from "@/lib/clients";
+
 
 export function AuditsTable({ title, subtitle, filterType, initialStatus = "", initialMinAnomalies = 0 }: { title: string; subtitle: string; filterType?: AuditType; initialStatus?: string; initialMinAnomalies?: number }) {
   const [q, setQ] = useState("");
@@ -47,11 +50,12 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
       <PageHeader title={title} subtitle={subtitle}
         actions={
           <>
-            <Button variant="outline"><FileSpreadsheet className="h-4 w-4" /> Export Excel</Button>
-            <Button variant="outline"><Download className="h-4 w-4" /> Export PDF</Button>
+            <Button variant="outline" onClick={() => exportTableExcel(title, filtered)}><FileSpreadsheet className="h-4 w-4" /> Export Excel</Button>
+            <Button variant="outline" onClick={() => exportTablePdf(title, subtitle, filtered)}><Download className="h-4 w-4" /> Export PDF</Button>
           </>
         }
       />
+
 
       <SectionCard title={`Audit Records (${filtered.length})`}>
         <div className="mb-4 grid gap-2 sm:grid-cols-4">
@@ -160,3 +164,26 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function tableRows(list: AuditRecord[]): Array<Array<string | number>> {
+  return list.map((a) => [
+    a.id, clientId(a.client), a.client, a.imu, a.sgu, a.type, a.status,
+    a.anomalies, `${a.compliance}%`, a.reviewDate,
+  ]);
+}
+const TABLE_HEADERS = ["Audit ID", "Client ID", "Client", "IMU", "SGU", "Type", "Status", "Anomalies", "Compliance", "Review Date"];
+
+function exportTableExcel(title: string, list: AuditRecord[]) {
+  exportExcelSections(slug(title), [
+    { title, headers: TABLE_HEADERS, rows: tableRows(list) },
+  ]);
+}
+function exportTablePdf(title: string, subtitle: string, list: AuditRecord[]) {
+  exportPdfSections(slug(title), title, subtitle, [
+    { title: `Records (${list.length})`, headers: TABLE_HEADERS, rows: tableRows(list) },
+  ]);
+}
+function slug(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "export";
+}
+

@@ -6,6 +6,9 @@ import { Button, Select } from "@/components/form-bits";
 import { Modal } from "@/components/Modal";
 import { IMU_OPTIONS, type AuditRecord, type AuditType } from "@/lib/mock-data";
 import { useAudits } from "@/lib/audit-store";
+import { exportExcelSections, exportPdfSections } from "@/lib/exporters";
+import { clientId } from "@/lib/clients";
+
 
 export function AuditsTable({ title, subtitle, filterType, initialStatus = "", initialMinAnomalies = 0 }: { title: string; subtitle: string; filterType?: AuditType; initialStatus?: string; initialMinAnomalies?: number }) {
   const [q, setQ] = useState("");

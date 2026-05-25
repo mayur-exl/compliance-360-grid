@@ -164,3 +164,26 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function tableRows(list: AuditRecord[]): Array<Array<string | number>> {
+  return list.map((a) => [
+    a.id, clientId(a.client), a.client, a.imu, a.sgu, a.type, a.status,
+    a.anomalies, `${a.compliance}%`, a.reviewDate,
+  ]);
+}
+const TABLE_HEADERS = ["Audit ID", "Client ID", "Client", "IMU", "SGU", "Type", "Status", "Anomalies", "Compliance", "Review Date"];
+
+function exportTableExcel(title: string, list: AuditRecord[]) {
+  exportExcelSections(slug(title), [
+    { title, headers: TABLE_HEADERS, rows: tableRows(list) },
+  ]);
+}
+function exportTablePdf(title: string, subtitle: string, list: AuditRecord[]) {
+  exportPdfSections(slug(title), title, subtitle, [
+    { title: `Records (${list.length})`, headers: TABLE_HEADERS, rows: tableRows(list) },
+  ]);
+}
+function slug(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "export";
+}
+

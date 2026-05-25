@@ -1,4 +1,4 @@
-import { Bell, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Bell, Home, Moon, Search, Sun, User, LogOut, Settings, UserCircle, ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAudits, getReminders } from "@/lib/audit-store";

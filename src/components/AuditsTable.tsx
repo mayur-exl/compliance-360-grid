@@ -50,11 +50,12 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
       <PageHeader title={title} subtitle={subtitle}
         actions={
           <>
-            <Button variant="outline"><FileSpreadsheet className="h-4 w-4" /> Export Excel</Button>
-            <Button variant="outline"><Download className="h-4 w-4" /> Export PDF</Button>
+            <Button variant="outline" onClick={() => exportTableExcel(title, filtered)}><FileSpreadsheet className="h-4 w-4" /> Export Excel</Button>
+            <Button variant="outline" onClick={() => exportTablePdf(title, subtitle, filtered)}><Download className="h-4 w-4" /> Export PDF</Button>
           </>
         }
       />
+
 
       <SectionCard title={`Audit Records (${filtered.length})`}>
         <div className="mb-4 grid gap-2 sm:grid-cols-4">

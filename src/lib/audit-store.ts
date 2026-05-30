@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { MOCK_AUDITS, type AuditRecord, type ContractualControl } from "@/lib/mock-data";
 
-const KEY = "c360.audits.v2";
+const KEY = "c360.audits.v3";
 
 function load(): AuditRecord[] {
   if (typeof window === "undefined") return MOCK_AUDITS;

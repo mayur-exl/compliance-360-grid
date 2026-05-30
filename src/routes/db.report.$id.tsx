@@ -45,7 +45,7 @@ function ReportPage() {
   const audit = audits.find((a) => a.id === id);
   if (!audit) throw notFound();
 
-  const isContractual = audit.type === "Contractual" && audit.controls && audit.controls.length > 0;
+  const isContractual = !!(audit.type === "Contractual" && audit.controls && audit.controls.length > 0);
   const realControls = isContractual ? audit.controls! : [];
   const legacyControls = isContractual ? [] : controlsFor(audit);
 

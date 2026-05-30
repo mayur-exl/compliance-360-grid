@@ -17,6 +17,7 @@ export function Header() {
     const reminderNotes = reminders.slice(0, 6).map((r) => ({
       id: `${r.auditId}-${r.control}`,
       auditId: r.auditId,
+      control: r.control,
       kind: r.kind === "overdue" ? ("alert" as const) : ("warn" as const),
       title: r.kind === "overdue"
         ? `Overdue: ${r.control} (${r.sectionNumber})`
@@ -26,6 +27,7 @@ export function Header() {
     const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 3).map((a) => ({
       id: a.id,
       auditId: a.id,
+      control: undefined as string | undefined,
       kind: a.anomalies > 0 ? ("alert" as const) : ("ok" as const),
       title: a.anomalies > 0 ? `${a.anomalies} anomal${a.anomalies === 1 ? "y" : "ies"} in ${a.type}` : `${a.type} audit completed`,
       subtitle: `${a.client} · ${a.reviewDate}`,

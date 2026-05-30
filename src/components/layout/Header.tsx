@@ -88,7 +88,7 @@ export function Header() {
                 <div className="px-4 py-8 text-center text-xs text-muted-foreground">No notifications</div>
               )}
               {notifications.map((n) => (
-                <Link key={n.id} to="/db/report/$id" params={{ id: n.auditId }} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
+                <Link key={n.id} to="/db/report/$id" params={{ id: n.auditId }} search={n.control ? { control: n.control } : {}} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
                   <div className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
                     n.kind === "alert" ? "bg-destructive/10 text-destructive"
                     : n.kind === "warn" ? "bg-[color:var(--color-warning)]/15 text-[color:var(--color-warning)]"

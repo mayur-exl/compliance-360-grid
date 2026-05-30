@@ -44,6 +44,9 @@ export interface Submission {
 
 export type ControlStatus = "Pending" | "Compliant" | "Non-Compliant" | "Overdue";
 
+// NEW: Overall validation status for contractual audits
+export type ControlsValidationStatus = "Artifacts Pending" | "Analyzing..." | "Compliant" | "Non-Compliant" | "Mixed";
+
 export interface ContractualControl {
   name: string;
   sectionNumber: string;          // e.g. "§4.2"
@@ -70,6 +73,8 @@ export interface AuditRecord {
   contractStartDate?: string;     // ISO date — contractual only
   documentTitle?: string;         // SOW/MSA title — contractual only
   controls?: ContractualControl[]; // contractual only
+  // NEW: Explicit validation status for contractual controls
+  controlsValidationStatus?: ControlsValidationStatus;
 }
 
 const clients = [
@@ -141,6 +146,8 @@ export const MOCK_AUDITS: AuditRecord[] = Array.from({ length: 42 }, (_, i) => {
     base.status = "In Review";
     base.anomalies = 0;
     base.compliance = 0;
+    // NEW: Set validation status to "Artifacts Pending" initially
+    base.controlsValidationStatus = "Artifacts Pending";
   }
   return base;
 });

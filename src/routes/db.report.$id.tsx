@@ -54,6 +54,9 @@ function ReportPage() {
     : legacyControls.filter((c) => c.status === "Compliant").length;
   const totalCount = isContractual ? realControls.length : legacyControls.length;
 
+  // NEW: Get validation status for contractual controls
+  const validationStatus = isContractual ? (audit.controlsValidationStatus ?? "Artifacts Pending") : undefined;
+
   const [uploadFor, setUploadFor] = useState<{ name: string; language: string } | null>(null);
 
   // Deep-link from notifications: auto-open upload modal
@@ -91,9 +94,9 @@ function ReportPage() {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase tracking-wider text-white/60">Compliance Score</div>
-            <div className={`mt-1 text-4xl font-bold ${audit.compliance >= 80 ? "text-[color:var(--color-success)]" : audit.compliance >= 60 ? "text-[color:var(--color-warning)]" : "text-destructive"}`}>
-              {audit.compliance}%
+            <div className="text-xs uppercase tracking-wider text-white/60">{isContractual ? "Controls Validation Status" : "Compliance Score"}</div>
+            <div className={`mt-1 text-4xl font-bold ${isContractual ? getStatusColor(validationStatus) : audit.compliance >= 80 ? "text-[color:var(--color-success)]" : audit.compliance >= 60 ? "text-[color:var(--color-warning)]" : "text-destructive"}`}>
+              {isContractual ? validationStatus : `${audit.compliance}%`}
             </div>
           </div>
         </div>
@@ -251,7 +254,7 @@ function ControlStatusBadge({ status }: { status: ContractualControl["status"] }
     return <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 text-[11px] font-semibold text-destructive"><XCircle className="h-3 w-3" />Non-Compliant</span>;
   if (status === "Overdue")
     return <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 text-[11px] font-semibold text-destructive"><AlertTriangle className="h-3 w-3" />Overdue</span>;
-  return <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--color-warning)]/15 px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-warning)]"><Clock className="h-3 w-3" />Artifacts Pending</span>;
+  return <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--color-warning)]/15 px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-warning)]"><Clock className="h-3 w-3" />Pending</span>;
 }
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: "success" | "danger" }) {
@@ -262,6 +265,24 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
       <div className={`mt-1 text-lg font-semibold ${cl}`}>{value}</div>
     </div>
   );
+}
+
+// NEW: Helper to get color for validation status
+function getStatusColor(status?: string): string {
+  switch (status) {
+    case "Artifacts Pending":
+      return "text-[color:var(--color-warning)]";
+    case "Analyzing...":
+      return "text-[color:var(--color-warning)]";
+    case "Compliant":
+      return "text-[color:var(--color-success)]";
+    case "Non-Compliant":
+      return "text-destructive";
+    case "Mixed":
+      return "text-[color:var(--color-warning)]";
+    default:
+      return "text-muted-foreground";
+  }
 }
 
 type Ctl = { control: string; status: "Compliant" | "Non-Compliant"; detail: string };

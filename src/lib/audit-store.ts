@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { MOCK_AUDITS, type AuditRecord, type ContractualControl } from "@/lib/mock-data";
+import { MOCK_AUDITS, type AuditRecord, type ContractualControl, type ControlsValidationStatus } from "@/lib/mock-data";
 
 const KEY = "c360.audits.v3";
 
@@ -25,6 +25,51 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+// NEW: Helper to compute controls validation status
+export function getControlsValidationStatus(audit: AuditRecord): ControlsValidationStatus {
+  if (audit.type !== "Contractual" || !audit.controls || audit.controls.length === 0) {
+    return "Compliant"; // fallback for non-contractual
+  }
+
+  const controls = audit.controls;
+  const pending = controls.filter((c) => c.status === "Pending").length;
+  const compliant = controls.filter((c) => c.status === "Compliant").length;
+  const nonCompliant = controls.filter((c) => c.status === "Non-Compliant").length;
+
+  // If all controls are pending (no artifacts uploaded yet)
+  if (pending === controls.length) {
+    return "Artifacts Pending";
+  }
+
+  // If no submissions yet, but some have been analyzed
+  if (pending > 0 && compliant === 0 && nonCompliant === 0) {
+    return "Artifacts Pending";
+  }
+
+  // If we have a mix of compliant and non-compliant
+  if (compliant > 0 && nonCompliant > 0) {
+    return "Mixed";
+  }
+
+  // If all are compliant
+  if (compliant === controls.length) {
+    return "Compliant";
+  }
+
+  // If all are non-compliant
+  if (nonCompliant === controls.length) {
+    return "Non-Compliant";
+  }
+
+  // Default to mixed if we have both compliant and pending
+  if (compliant > 0 && pending > 0) {
+    return "Mixed";
+  }
+
+  // Default fallback
+  return "Artifacts Pending";
+}
+
 export const auditStore = {
   subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
   getSnapshot() { return audits; },
@@ -44,7 +89,11 @@ export const auditStore = {
       const nonCompliant = controls.filter((c) => c.status === "Non-Compliant" || c.status === "Overdue").length;
       const compliant = controls.filter((c) => c.status === "Compliant").length;
       const compliance = controls.length ? Math.round((compliant / controls.length) * 100) : a.compliance;
-      return { ...a, controls, anomalies: nonCompliant, compliance };
+      
+      // NEW: Compute validation status
+      const controlsValidationStatus = getControlsValidationStatus({ ...a, controls });
+      
+      return { ...a, controls, anomalies: nonCompliant, compliance, controlsValidationStatus };
     });
     persist();
   },

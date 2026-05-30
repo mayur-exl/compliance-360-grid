@@ -405,7 +405,7 @@ function ControlRow({ control, expanded, onToggle, onUpload }: {
   );
 }
 
-function UploadArtifactModal({ open, auditId, controlName, language, onClose }: {
+export function UploadArtifactModal({ open, auditId, controlName, language, onClose }: {
   open: boolean; auditId: string; controlName: string; language: string; onClose: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);

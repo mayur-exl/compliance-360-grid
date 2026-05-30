@@ -17,6 +17,7 @@ export function Header() {
     const reminderNotes = reminders.slice(0, 6).map((r) => ({
       id: `${r.auditId}-${r.control}`,
       auditId: r.auditId,
+      control: r.control,
       kind: r.kind === "overdue" ? ("alert" as const) : ("warn" as const),
       title: r.kind === "overdue"
         ? `Overdue: ${r.control} (${r.sectionNumber})`
@@ -26,6 +27,7 @@ export function Header() {
     const recent = [...audits].sort((a, b) => b.reviewDate.localeCompare(a.reviewDate)).slice(0, 3).map((a) => ({
       id: a.id,
       auditId: a.id,
+      control: undefined as string | undefined,
       kind: a.anomalies > 0 ? ("alert" as const) : ("ok" as const),
       title: a.anomalies > 0 ? `${a.anomalies} anomal${a.anomalies === 1 ? "y" : "ies"} in ${a.type}` : `${a.type} audit completed`,
       subtitle: `${a.client} · ${a.reviewDate}`,
@@ -86,7 +88,7 @@ export function Header() {
                 <div className="px-4 py-8 text-center text-xs text-muted-foreground">No notifications</div>
               )}
               {notifications.map((n) => (
-                <Link key={n.id} to="/db/report/$id" params={{ id: n.auditId }} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
+                <Link key={n.id} to="/db/report/$id" params={{ id: n.auditId }} search={n.control ? { control: n.control } : {}} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-muted/50 transition">
                   <div className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
                     n.kind === "alert" ? "bg-destructive/10 text-destructive"
                     : n.kind === "warn" ? "bg-[color:var(--color-warning)]/15 text-[color:var(--color-warning)]"

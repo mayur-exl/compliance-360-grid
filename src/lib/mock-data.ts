@@ -92,10 +92,35 @@ function seeded(i: number) {
   return Math.abs(Math.sin(i * 9301 + 49297) * 233280) % 1;
 }
 
+const FREQS: Frequency[] = ["Monthly", "Quarterly", "Half-Yearly", "Yearly"];
+
+function isoUTC(y: number, m: number, d: number) {
+  return new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10);
+}
+
+function buildContractualControls(seedIdx: number, startDateISO: string): ContractualControl[] {
+  const start = new Date(startDateISO);
+  return CONTRACTUAL_CONTROLS.map((name, ci) => {
+    const freq = FREQS[(seedIdx + ci) % FREQS.length];
+    const months = FREQUENCY_MONTHS[freq];
+    const next = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + months, start.getUTCDate()));
+    return {
+      name,
+      sectionNumber: `§${2 + (ci % 8)}.${1 + (ci % 5)}`,
+      frequency: freq,
+      language: `Provider shall maintain ${name} controls and provide evidence at the agreed ${freq.toLowerCase()} cadence.`,
+      status: "Pending" as ControlStatus,
+      nextDueDate: next.toISOString().slice(0, 10),
+      submissions: [],
+    };
+  });
+}
+
 export const MOCK_AUDITS: AuditRecord[] = Array.from({ length: 42 }, (_, i) => {
   const type = types[i % 3];
   const client = clients[i % clients.length];
-  return {
+  const reviewDate = isoUTC(2025, i % 12, 1 + (i % 27));
+  const base: AuditRecord = {
     id: `AUD-${1000 + i}`,
     title: `${type} Review – ${client.split(" ")[0]}`,
     client,
@@ -105,9 +130,19 @@ export const MOCK_AUDITS: AuditRecord[] = Array.from({ length: 42 }, (_, i) => {
     status: statuses[Math.floor(seeded(i) * 3)],
     anomalies: Math.floor(seeded(i + 1) * 12),
     compliance: 70 + Math.floor(seeded(i + 2) * 30),
-    reviewDate: new Date(2025, (i % 12), 1 + (i % 27)).toISOString().slice(0, 10),
+    reviewDate,
     reportUrl: `/reports/AUD-${1000 + i}.pdf`,
   };
+  if (type === "Contractual") {
+    base.documentTitle = `MSA / SOW – ${client.split(" ")[0]}`;
+    base.contractStartDate = reviewDate;
+    base.controls = buildContractualControls(i, reviewDate);
+    // status reflects artifact lifecycle: all pending initially
+    base.status = "In Review";
+    base.anomalies = 0;
+    base.compliance = 0;
+  }
+  return base;
 });
 
 export const MONTHLY_VOLUME = [

@@ -8,12 +8,13 @@ import {
   type AuditRecord, type ContractualControl, type Frequency, type Submission,
 } from "@/lib/mock-data";
 import { auditStore, nextAuditId, useAudits } from "@/lib/audit-store";
+import { clientId } from "@/lib/clients";
 
-type Mode = "picker" | "new-sow" | "artifact";
+type Mode = "new-sow" | "artifact";
 
 export function ContractualWorkflow() {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>("picker");
+  const [mode, setMode] = useState<Mode>("new-sow");
 
   const audits = useAudits();
   const contractualAudits = useMemo(
@@ -21,8 +22,7 @@ export function ContractualWorkflow() {
     [audits],
   );
 
-  function reset() { setMode("picker"); }
-  function close() { setOpen(false); setTimeout(reset, 200); }
+  function close() { setOpen(false); }
 
   return (
     <div className="space-y-6">
@@ -30,9 +30,14 @@ export function ContractualWorkflow() {
         title="Contractual Compliance Review"
         subtitle="Track adherence to SOW/MSA controls — submit artifacts on schedule, validate with AI"
         actions={
-          <Button onClick={() => { setOpen(true); reset(); }} variant="primary">
-            <Play className="h-4 w-4" /> Start New Review
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => { setMode("new-sow"); setOpen(true); }} variant="primary">
+              <Play className="h-4 w-4" /> Start New Review
+            </Button>
+            <Button onClick={() => { setMode("artifact"); setOpen(true); }} variant="secondary" disabled={contractualAudits.length === 0}>
+              <Upload className="h-4 w-4" /> Artifacts Submission
+            </Button>
+          </div>
         }
       />
 
@@ -70,39 +75,11 @@ export function ContractualWorkflow() {
       </SectionCard>
 
       <Modal open={open} onClose={close}
-        title={mode === "new-sow" ? "New SOW / MSA" : mode === "artifact" ? "Submit Artifact" : "Start New Review"}
-        subtitle={mode === "picker" ? "Choose what you want to do" : undefined}
+        title={mode === "new-sow" ? "New SOW / MSA" : "Submit Artifact"}
         size="xl">
-        {mode === "picker" && <ModePicker onPick={setMode} hasExisting={contractualAudits.length > 0} />}
         {mode === "new-sow" && <NewSOWFlow onDone={close} />}
         {mode === "artifact" && <ArtifactSubmissionFlow audits={contractualAudits} onDone={close} />}
       </Modal>
-    </div>
-  );
-}
-
-/* ---------------- Mode picker ---------------- */
-
-function ModePicker({ onPick, hasExisting }: { onPick: (m: Mode) => void; hasExisting: boolean }) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <button onClick={() => onPick("artifact")} disabled={!hasExisting}
-        className="group rounded-2xl border border-border bg-gradient-to-br from-secondary/10 to-secondary/0 p-5 text-left transition hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none">
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Upload className="h-5 w-5" /></div>
-        <div className="mt-4 text-base font-semibold">Artifact Submission</div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Submit periodic evidence for an existing SOW. AI validates it against the recorded control language.
-        </p>
-        {!hasExisting && <p className="mt-3 text-[11px] text-destructive">No SOWs available — register one first.</p>}
-      </button>
-      <button onClick={() => onPick("new-sow")}
-        className="group rounded-2xl border border-border bg-gradient-to-br from-primary/10 to-primary/0 p-5 text-left transition hover:shadow-md hover:-translate-y-0.5">
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-primary-foreground"><FileText className="h-5 w-5" /></div>
-        <div className="mt-4 text-base font-semibold">New SOW / MSA</div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Upload a freshly executed contract. AI extracts controls, frequencies, and section numbers and schedules submission dates.
-        </p>
-      </button>
     </div>
   );
 }
@@ -113,29 +90,245 @@ type SOWState = {
   client: string; imu: string; sgu: string;
   documentTitle: string; contractStartDate: string;
   file: File | null;
+  notApplicableControls: string[];
 };
 
 function NewSOWFlow({ onDone }: { onDone: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
   const [state, setState] = useState<SOWState>({
     client: "", imu: "", sgu: "", documentTitle: "", contractStartDate: today, file: null,
+    notApplicableControls: [],
   });
   const [phase, setPhase] = useState<"form" | "analyzing" | "results" | "saved">("form");
   const [extracted, setExtracted] = useState<ContractualControl[]>([]);
-  const canAnalyze = state.client && state.imu && state.sgu && state.documentTitle && state.contractStartDate && state.file;
+  const canAnalyze = state.imu && state.sgu && state.file;
+  const audits = useAudits();
 
-  function analyze() {
+  function inferDocumentTitle(fileName: string) {
+    return fileName.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
+  }
+
+  function inferClientName(fileName: string) {
+    const title = inferDocumentTitle(fileName);
+    const customerMatch = title.match(/\b(?:customer|client)[\s:_-]+([^\s_-]+(?:[\s_-][^\s_-]+)*?)(?=\s+(?:msa|sow|agreement|contract|deal|report|invoice)\b|$)/i);
+    if (customerMatch?.[1]) return customerMatch[1].trim();
+
+    const genericMatch = title.match(/^(.*?)(?:\s+(?:MSA|SOW|Agreement|Contract|Agreement)\b|[-–—]|_)/i);
+    if (genericMatch?.[1]) return genericMatch[1].trim();
+
+    const words = title.split(/\s+/).filter(Boolean);
+    return words.length >= 2 ? `${words[0]} ${words[1]}` : title;
+  }
+
+  function inferContractStartDate(fileName: string) {
+    const text = inferDocumentTitle(fileName);
+    const isoMatch = text.match(/\b(\d{4})[-/](\d{2})[-/](\d{2})\b/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+    const mdYMatch = text.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/);
+    if (mdYMatch) {
+      let [, m, d, y] = mdYMatch;
+      if (y.length === 2) y = `20${y}`;
+      m = m.padStart(2, "0");
+      d = d.padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    const monthMatch = text.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s.-]*(\d{1,2})(?:st|nd|rd|th)?,?[\s,-]*(\d{4})\b/i);
+    if (monthMatch) {
+      const monthNames: Record<string, string> = {
+        January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
+        July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
+        Jan: "01", Feb: "02", Mar: "03", Apr: "04", Jun: "06", Jul: "07", Aug: "08",
+        Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+      };
+      const month = monthNames[monthMatch[1]];
+      const day = monthMatch[2].padStart(2, "0");
+      return `${monthMatch[3]}-${month}-${day}`;
+    }
+
+    return today;
+  }
+
+  function normalizeDate(value: string) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    const isoMatch = normalized.match(/\b(\d{4})[-/](\d{2})[-/](\d{2})\b/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+    const mdYMatch = normalized.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/);
+    if (mdYMatch) {
+      let [, m, d, y] = mdYMatch;
+      if (y.length === 2) y = `20${y}`;
+      m = m.padStart(2, "0");
+      d = d.padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    return today;
+  }
+
+  function parseNotApplicableControls(text: string) {
+    const normalized = text
+      .toLowerCase()
+      .replace(/\r/g, " ")
+      .replace(/\n+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const patterns = [
+      "not applicable",
+      "n/a",
+      "does not apply",
+      "doesn't apply",
+      "is not applicable",
+      "is n/a",
+      "not required",
+      "excluded",
+      "without requirement",
+      "no requirement",
+      "not within scope",
+      "not subject to",
+      "not in scope",
+    ];
+
+    const results: string[] = [];
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const marker = patterns.map(escapeRegExp).join("|");
+
+    for (const name of CONTRACTUAL_CONTROLS) {
+      const controlPattern = escapeRegExp(name.toLowerCase()).replace(/\s+/g, "\\s+");
+      const regex1 = new RegExp(`\\b${controlPattern}\\b[\\s\\S]{0,240}?(?:${marker})`, "i");
+      const regex2 = new RegExp(`(?:${marker})[\\s\\S]{0,240}?\\b${controlPattern}\\b`, "i");
+      if (regex1.test(normalized) || regex2.test(normalized)) {
+        results.push(name);
+      }
+    }
+
+    return Array.from(new Set(results));
+  }
+
+  async function extractContractMetadata(file: File) {
+    const fallback = {
+      client: inferClientName(file.name),
+      documentTitle: inferDocumentTitle(file.name),
+      contractStartDate: inferContractStartDate(file.name),
+      notApplicableControls: [] as string[],
+    };
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const decoded = new TextDecoder("utf-8", { fatal: false }).decode(arrayBuffer);
+      const text = decoded
+        .replace(/[\x00-\x1F\x7F-\x9F]+/g, " ")
+        .replace(/\r/g, " ")
+        .replace(/\n+/g, " ")
+        .trim();
+
+      const clientMatch = text.match(/\b(?:Customer|Client)\s*(?:Name)?\s*[:\-–]\s*([A-Z][A-Za-z0-9&\.,'’\-\s]{2,}?)\b/i)
+        || text.match(/\bCustomer\s*[:\-–]\s*([A-Z][A-Za-z0-9&\.,'’\-\s]{2,}?)\b/i)
+        || text.match(/\bClient\s*[:\-–]\s*([A-Z][A-Za-z0-9&\.,'’\-\s]{2,}?)\b/i);
+
+      const effectiveDateMatch = text.match(/\bEffective\s*(?:Date)?\s*[:\-–]\s*([A-Za-z0-9\s\./,-]{6,40})\b/i)
+        || text.match(/\bEffective\s*[:\-–]\s*([A-Za-z0-9\s\./,-]{6,40})\b/i);
+
+      const client = clientMatch?.[1]?.trim() || fallback.client;
+      const contractStartDate = effectiveDateMatch?.[1]
+        ? normalizeDate(effectiveDateMatch[1])
+        : fallback.contractStartDate;
+      const notApplicableControls = parseNotApplicableControls(text);
+
+      return {
+        client,
+        documentTitle: fallback.documentTitle,
+        contractStartDate,
+        notApplicableControls,
+      };
+    } catch {
+      return fallback;
+    }
+  }
+
+  function setFile(file: File | null) {
+    setState((prev) => ({
+      ...prev,
+      file,
+    }));
+  }
+
+  async function analyze() {
+    if (!state.file) return;
     setPhase("analyzing");
+
+    const parsed = await extractContractMetadata(state.file);
+    setState((prev) => ({
+      ...prev,
+      client: prev.client || parsed.client,
+      documentTitle: prev.documentTitle || parsed.documentTitle,
+      contractStartDate: parsed.contractStartDate || prev.contractStartDate,
+      notApplicableControls: parsed.notApplicableControls || [],
+    }));
+
     setTimeout(() => {
-      setExtracted(mockExtractControls(state.contractStartDate));
+      setExtracted(mockExtractControls(parsed.contractStartDate || state.contractStartDate, parsed.notApplicableControls || []));
       setPhase("results");
     }, 1400);
   }
 
   function save() {
-    const id = nextAuditId();
     const compliantCount = 0;
     const compliance = extracted.length ? Math.round((compliantCount / extracted.length) * 100) : 0;
+
+    // If a contractual audit already exists for this client+IMU+SGU, merge the new SOW into it
+    const existing = audits.find((a) =>
+      a.type === "Contractual" && clientId(a.client, a.imu, a.sgu) === clientId(state.client, state.imu, state.sgu)
+    );
+
+    if (existing) {
+      const existingControls = existing.controls ?? [];
+      const existingByName = new Map(existingControls.map((c) => [c.name, c]));
+      const extractedNames = new Set(extracted.map((c) => c.name));
+
+      const mergedControls = extracted.map((c) => {
+        const existingControl = existingByName.get(c.name);
+        return {
+          ...c,
+          status: existingControl?.status === "Compliant" ? "Compliant" : c.status,
+          submissions: existingControl?.submissions.length ? existingControl.submissions : c.submissions,
+        };
+      });
+
+      const retainedOldControls = existingControls.filter((c) =>
+        !extractedNames.has(c.name) && !state.notApplicableControls.includes(c.name),
+      );
+
+      const finalControls = [...mergedControls, ...retainedOldControls];
+
+      const mergedDocuments = existing.documents && existing.documents.length > 0
+        ? existing.documents.slice()
+        : (existing.documentUrl ? [{ title: existing.documentTitle || "SOW", url: existing.documentUrl, uploadedAt: existing.contractStartDate || existing.reviewDate || new Date().toISOString().slice(0, 10) }] : []);
+      if (state.file) {
+        const docEntry = {
+          title: state.documentTitle || state.file.name,
+          url: `/documents/${existing.id}-${encodeURIComponent(state.file.name)}`,
+          uploadedAt: new Date().toISOString().slice(0, 10),
+        };
+        mergedDocuments.push(docEntry);
+      }
+
+      const newDocumentTitle = existing.documentTitle || state.documentTitle || (mergedDocuments[0]?.title ?? "");
+
+      auditStore.update(existing.id, {
+        controls: finalControls,
+        documents: mergedDocuments,
+        documentTitle: newDocumentTitle,
+        documentUrl: mergedDocuments[0]?.url ?? existing.documentUrl,
+        contractStartDate: existing.contractStartDate || state.contractStartDate,
+      });
+
+      setPhase("saved");
+      return;
+    }
+
+    const id = nextAuditId();
     const rec: AuditRecord = {
       id,
       title: `Contractual – ${state.client}`,
@@ -147,10 +340,13 @@ function NewSOWFlow({ onDone }: { onDone: () => void }) {
       compliance,
       reviewDate: new Date().toISOString().slice(0, 10),
       reportUrl: `/reports/${id}.pdf`,
+      documentUrl: state.file ? `/documents/${id}-${encodeURIComponent(state.file.name)}` : undefined,
+      documents: state.file ? [{ title: state.documentTitle || (state.file && state.file.name) || "SOW", url: `/documents/${id}-${encodeURIComponent(state.file.name)}`, uploadedAt: new Date().toISOString().slice(0, 10) }] : [],
       contractStartDate: state.contractStartDate,
       documentTitle: state.documentTitle,
       controls: extracted,
     };
+
     auditStore.add(rec);
     setPhase("saved");
   }
@@ -171,10 +367,10 @@ function NewSOWFlow({ onDone }: { onDone: () => void }) {
           </Field>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="IMU">
+          <Field label="IMU *">
             <Select value={state.imu} onChange={(v) => setState({ ...state, imu: v })} options={[...IMU_OPTIONS]} />
           </Field>
-          <Field label="SGU">
+          <Field label="SGU *">
             <Select value={state.sgu} onChange={(v) => setState({ ...state, sgu: v })} options={[...SGU_OPTIONS]} />
           </Field>
           <Field label="Contract Start Date">
@@ -184,7 +380,7 @@ function NewSOWFlow({ onDone }: { onDone: () => void }) {
           </Field>
         </div>
         <Field label="Upload Contract">
-          <FileSlot accept=".pdf,.docx" file={state.file} onChange={(f) => setState({ ...state, file: f })} />
+          <FileSlot accept=".pdf,.docx" file={state.file} onChange={setFile} />
         </Field>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onDone}>Cancel</Button>
@@ -200,11 +396,39 @@ function NewSOWFlow({ onDone }: { onDone: () => void }) {
     <div className="space-y-5">
       <div className="rounded-xl border border-[color:var(--color-success)]/30 bg-[color:var(--color-success)]/10 p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-success)]">
-          <Sparkles className="h-4 w-4" /> AI extracted {extracted.length} controls from {state.documentTitle}
+          <Sparkles className="h-4 w-4" /> AI extracted {extracted.length} controls from {state.documentTitle || "the uploaded file"}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Each control now has a section number, frequency, and captured contract language. Submission timelines are scheduled from {state.contractStartDate}.
         </p>
+      </div>
+
+      {state.notApplicableControls.length > 0 && (
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+          <div className="font-semibold">Detected as N/A from uploaded document:</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {state.notApplicableControls.map((name) => (
+              <Badge key={name} variant="default">{name}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Client Name">
+          <input value={state.client} onChange={(e) => setState({ ...state, client: e.target.value })}
+            placeholder="Optional client name"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+        </Field>
+        <Field label="SOW / MSA Title">
+          <input value={state.documentTitle} onChange={(e) => setState({ ...state, documentTitle: e.target.value })}
+            placeholder="Optional title, auto-filled from file"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+        </Field>
+        <Field label="Contract Start Date">
+          <input type="date" value={state.contractStartDate} onChange={(e) => setState({ ...state, contractStartDate: e.target.value })}
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+        </Field>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border">
@@ -346,10 +570,10 @@ function ArtifactSubmissionFlow({ audits, onDone }: { audits: AuditRecord[]; onD
 function ControlRow({ control, expanded, onToggle, onUpload }: {
   control: ContractualControl; expanded: boolean; onToggle: () => void; onUpload: () => void;
 }) {
-  const dueDate = new Date(control.nextDueDate);
+  const dueDate = control.nextDueDate ? new Date(control.nextDueDate) : null;
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const days = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
-  const overdue = days < 0 && control.status !== "Compliant";
+  const days = dueDate ? Math.round((dueDate.getTime() - today.getTime()) / 86400000) : NaN;
+  const overdue = dueDate ? days < 0 && control.status !== "Compliant" && control.status !== "Not Applicable" : false;
   return (
     <div className="border-t border-border first:border-0">
       <div className="flex items-center gap-3 px-3 py-2.5">
@@ -362,11 +586,13 @@ function ControlRow({ control, expanded, onToggle, onUpload }: {
             <span className="font-mono text-[11px] text-muted-foreground">{control.sectionNumber}</span>
           </div>
           <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-            <Badge variant="info">{control.frequency}</Badge>
-            <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> Due {control.nextDueDate}</span>
-            <span className={overdue ? "text-destructive font-semibold" : days <= 10 ? "text-[color:var(--color-warning)] font-semibold" : ""}>
-              {overdue ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : `${days}d remaining`}
-            </span>
+            <Badge variant={control.frequency === "N/A" ? "default" : "info"}>{control.frequency}</Badge>
+            <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> Due {control.nextDueDate || "N/A"}</span>
+            {dueDate && (
+              <span className={overdue ? "text-destructive font-semibold" : days <= 10 ? "text-[color:var(--color-warning)] font-semibold" : ""}>
+                {overdue ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : `${days}d remaining`}
+              </span>
+            )}
           </div>
         </div>
         <StatusPill status={overdue ? "Overdue" : control.status} />
@@ -433,14 +659,16 @@ export function UploadArtifactModal({ open, auditId, controlName, language, onCl
         verdict: verdict.ok ? "Compliant" : "Non-Compliant",
         notes: verdict.notes,
       };
-      const months = FREQUENCY_MONTHS[c.frequency];
+      const months = c.frequency === "N/A" ? 0 : FREQUENCY_MONTHS[c.frequency];
       const next = new Date(today);
-      next.setMonth(next.getMonth() + months);
+      if (c.frequency !== "N/A") {
+        next.setMonth(next.getMonth() + months);
+      }
       return {
         ...c,
         status: verdict.ok ? "Compliant" : "Non-Compliant",
         lastSubmissionDate: today,
-        nextDueDate: verdict.ok ? next.toISOString().slice(0, 10) : c.nextDueDate,
+        nextDueDate: verdict.ok ? (c.frequency === "N/A" ? c.nextDueDate : next.toISOString().slice(0, 10)) : c.nextDueDate,
         submissions: [...c.submissions, sub],
       };
     });
@@ -504,6 +732,7 @@ function StatusPill({ status }: { status: ContractualControl["status"] }) {
     Pending: { label: "Pending", cls: "bg-muted text-muted-foreground" },
     "Non-Compliant": { label: "Non-Compliant", cls: "bg-destructive/15 text-destructive" },
     Overdue: { label: "Overdue", cls: "bg-destructive/15 text-destructive" },
+    "Not Applicable": { label: "Not Applicable", cls: "bg-muted/15 text-muted-foreground" },
   };
   const m = map[status];
   return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${m.cls}`}>{m.label}</span>;
@@ -568,20 +797,22 @@ const CONTROL_LANGUAGE: Record<string, string> = {
   "Monthly Reviews": "Vendor shall participate in a monthly governance review with operational KPIs and incident summaries.",
 };
 
-function mockExtractControls(contractStart: string): ContractualControl[] {
+function mockExtractControls(contractStart: string, notApplicableControls: string[] = []): ContractualControl[] {
   const start = new Date(contractStart);
-  return CONTRACTUAL_CONTROLS.map((name, i) => {
-    const freq = FREQUENCY_ROTATION[i % FREQUENCY_ROTATION.length];
-    const months = FREQUENCY_MONTHS[freq];
+  return CONTRACTUAL_CONTROLS.map((name, originalIndex) => {
+    const isNotApplicable = notApplicableControls.includes(name);
+    const freq: Frequency = isNotApplicable ? "N/A" : FREQUENCY_ROTATION[originalIndex % FREQUENCY_ROTATION.length];
     const due = new Date(start);
-    due.setMonth(due.getMonth() + months);
+    if (freq !== "N/A") {
+      due.setMonth(due.getMonth() + FREQUENCY_MONTHS[freq]);
+    }
     return {
       name,
-      sectionNumber: `§${4 + Math.floor(i / 2)}.${(i % 4) + 1}`,
+      sectionNumber: `§${4 + Math.floor(originalIndex / 2)}.${(originalIndex % 4) + 1}`,
       frequency: freq,
       language: CONTROL_LANGUAGE[name] ?? `${name} shall be performed per agreed cadence with evidence retained for audit.`,
-      status: "Pending",
-      nextDueDate: due.toISOString().slice(0, 10),
+      status: isNotApplicable ? "Not Applicable" : "Pending",
+      nextDueDate: isNotApplicable ? "" : due.toISOString().slice(0, 10),
       submissions: [],
     };
   });

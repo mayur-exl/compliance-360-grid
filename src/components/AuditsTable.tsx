@@ -136,6 +136,31 @@ export function AuditsTable({ title, subtitle, filterType, initialStatus = "", i
               <Info label="Anomalies" value={String(detail.anomalies)} />
               <Info label="Compliance" value={`${detail.compliance}%`} />
             </div>
+            {(() => {
+              const docs = (detail.documents && detail.documents.length > 0)
+                ? detail.documents
+                : (detail.documentUrl ? [{ title: detail.documentTitle || "SOW", url: detail.documentUrl, uploadedAt: detail.contractStartDate || detail.reviewDate || "" }] : []);
+              if (docs.length === 0) return null;
+              return (
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">SOW / MSA</div>
+                  <ul className="mt-2 space-y-1">
+                    {docs.map((d, i) => (
+                      <li key={i}>
+                        {d.url ? (
+                          <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline">
+                            {d.title}
+                          </a>
+                        ) : (
+                          <div className="font-medium">{d.title}</div>
+                        )}
+                        <div className="text-xs text-muted-foreground">Uploaded: {d.uploadedAt}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
             <div className="flex justify-end gap-2 pt-2">
               <Link to="/db/report/$id" params={{ id: detail.id }} onClick={() => setDetail(null)}
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90">
@@ -167,7 +192,7 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function tableRows(list: AuditRecord[]): Array<Array<string | number>> {
   return list.map((a) => [
-    a.id, clientId(a.client), a.client, a.imu, a.sgu, a.type, a.status,
+    a.id, clientId(a.client, a.imu, a.sgu), a.client, a.imu, a.sgu, a.type, a.status,
     a.anomalies, `${a.compliance}%`, a.reviewDate,
   ]);
 }

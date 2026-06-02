@@ -109,6 +109,32 @@ function ReportPage() {
         <Stat label="Anomalies" value={String(audit.anomalies)} accent={audit.anomalies > 0 ? "danger" : "success"} />
       </div>
 
+      {(() => {
+        const docs = (audit.documents && audit.documents.length > 0)
+          ? audit.documents
+          : (audit.documentUrl ? [{ title: audit.documentTitle || "SOW", url: audit.documentUrl, uploadedAt: audit.contractStartDate || audit.reviewDate || "" }] : []);
+        if (docs.length === 0) return null;
+        return (
+          <SectionCard title="Source SOW / MSA" subtitle="The contract document(s) where the controls were extracted from">
+            <div className="flex flex-col gap-2 text-sm">
+              <ul className="space-y-2">
+                {docs.map((d, i) => (
+                  <li key={i} className="">
+                    <div className="font-semibold">{d.title}</div>
+                    {d.url ? (
+                      <a href={d.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">Open uploaded SOW / MSA</a>
+                    ) : (
+                      <div className="text-muted-foreground">Document link unavailable</div>
+                    )}
+                    <div className="text-xs text-muted-foreground">Uploaded: {d.uploadedAt}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </SectionCard>
+        );
+      })()}
+
       <div id="controls-section">
       {isContractual ? (
         <SectionCard
@@ -129,22 +155,24 @@ function ReportPage() {
               </thead>
               <tbody>
                 {realControls.map((c) => {
-                  const due = new Date(c.nextDueDate);
+                  const due = c.nextDueDate ? new Date(c.nextDueDate) : null;
                   const today = new Date(); today.setHours(0, 0, 0, 0);
-                  const days = Math.round((due.getTime() - today.getTime()) / 86400000);
-                  const overdue = days < 0 && c.status !== "Compliant";
+                  const days = due ? Math.round((due.getTime() - today.getTime()) / 86400000) : NaN;
+                  const overdue = due ? days < 0 && c.status !== "Compliant" && c.status !== "Not Applicable" : false;
                   const effective: ContractualControl["status"] = overdue ? "Overdue" : c.status;
                   return (
                     <tr key={c.name} className={`border-t border-border ${focusControl === c.name ? "bg-primary/5" : ""}`}>
                       <td className="px-4 py-2.5 font-medium">{c.name}</td>
                       <td className="px-4 py-2.5 font-mono text-xs">{c.sectionNumber}</td>
-                      <td className="px-4 py-2.5"><Badge variant="info">{c.frequency}</Badge></td>
+                      <td className="px-4 py-2.5"><Badge variant={c.frequency === "N/A" ? "default" : "info"}>{c.frequency}</Badge></td>
                       <td className="px-4 py-2.5"><ControlStatusBadge status={effective} /></td>
                       <td className="px-4 py-2.5 text-muted-foreground">
-                        {c.nextDueDate}
-                        <span className={`ml-2 text-[11px] ${overdue ? "text-destructive font-semibold" : days <= 10 ? "text-[color:var(--color-warning)] font-semibold" : "text-muted-foreground"}`}>
-                          {overdue ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `${days}d left`}
-                        </span>
+                        {c.nextDueDate || "N/A"}
+                        {due && (
+                          <span className={`ml-2 text-[11px] ${overdue ? "text-destructive font-semibold" : days <= 10 ? "text-[color:var(--color-warning)] font-semibold" : "text-muted-foreground"}`}>
+                            {overdue ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `${days}d left`}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <Button variant="primary" onClick={() => setUploadFor({ name: c.name, language: c.language })}>
@@ -254,6 +282,8 @@ function ControlStatusBadge({ status }: { status: ContractualControl["status"] }
     return <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 text-[11px] font-semibold text-destructive"><XCircle className="h-3 w-3" />Non-Compliant</span>;
   if (status === "Overdue")
     return <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 text-[11px] font-semibold text-destructive"><AlertTriangle className="h-3 w-3" />Overdue</span>;
+  if (status === "Not Applicable")
+    return <span className="inline-flex items-center gap-1 rounded-md bg-muted/15 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">Not Applicable</span>;
   return <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--color-warning)]/15 px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-warning)]"><Clock className="h-3 w-3" />Pending</span>;
 }
 
@@ -302,7 +332,7 @@ function controlsFor(a: AuditRecord): Ctl[] {
 
 function metaRows(a: AuditRecord): Array<[string, string]> {
   return [
-    ["Audit ID", a.id], ["Client ID", clientId(a.client)], ["Title", a.title],
+    ["Audit ID", a.id], ["Client ID", clientId(a.client, a.imu, a.sgu)], ["Title", a.title],
     ["Client", a.client], ["Type", a.type], ["IMU", a.imu], ["SGU", a.sgu],
     ["Status", a.status], ["Review Date", a.reviewDate],
     ["Compliance %", String(a.compliance)], ["Anomalies", String(a.anomalies)],

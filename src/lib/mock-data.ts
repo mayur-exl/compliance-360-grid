@@ -29,8 +29,8 @@ export const ENDPOINT_BASELINE = [
 
 export type AuditType = "Contractual" | "LAR" | "Endpoint";
 
-export type Frequency = "Monthly" | "Quarterly" | "Half-Yearly" | "Yearly";
-export const FREQUENCY_MONTHS: Record<Frequency, number> = {
+export type Frequency = "Monthly" | "Quarterly" | "Half-Yearly" | "Yearly" | "N/A";
+export const FREQUENCY_MONTHS: Record<Exclude<Frequency, "N/A">, number> = {
   Monthly: 1, Quarterly: 3, "Half-Yearly": 6, Yearly: 12,
 };
 
@@ -42,7 +42,7 @@ export interface Submission {
   notes: string;
 }
 
-export type ControlStatus = "Pending" | "Compliant" | "Non-Compliant" | "Overdue";
+export type ControlStatus = "Pending" | "Compliant" | "Non-Compliant" | "Overdue" | "Not Applicable";
 
 // NEW: Overall validation status for contractual audits
 export type ControlsValidationStatus = "Artifacts Pending" | "Analyzing..." | "Compliant" | "Non-Compliant" | "Mixed";
@@ -72,6 +72,8 @@ export interface AuditRecord {
   reportUrl: string;
   contractStartDate?: string;     // ISO date — contractual only
   documentTitle?: string;         // SOW/MSA title — contractual only
+  documentUrl?: string;           // Legacy: Source SOW/MSA document link — contractual only
+  documents?: { title: string; url: string; uploadedAt: string }[]; // Distinct SOW/MSA document entries
   controls?: ContractualControl[]; // contractual only
   // NEW: Explicit validation status for contractual controls
   controlsValidationStatus?: ControlsValidationStatus;
@@ -140,6 +142,8 @@ export const MOCK_AUDITS: AuditRecord[] = Array.from({ length: 42 }, (_, i) => {
   };
   if (type === "Contractual") {
     base.documentTitle = `MSA / SOW – ${client.split(" ")[0]}`;
+    base.documentUrl = `/documents/${base.id}-sow.pdf`;
+    base.documents = [{ title: base.documentTitle, url: base.documentUrl, uploadedAt: reviewDate }];
     base.contractStartDate = reviewDate;
     base.controls = buildContractualControls(i, reviewDate);
     // status reflects artifact lifecycle: all pending initially

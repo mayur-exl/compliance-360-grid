@@ -1,11 +1,16 @@
 import type { AuditRecord } from "@/lib/mock-data";
 
-/** Deterministic short client id derived from the client name */
-export function clientId(name: string): string {
+/** Deterministic short client id derived from client name plus IMU/SGU to avoid duplicate client identities */
+export function clientId(name: string, imu?: string, sgu?: string): string {
+  const seed = `${normalizeClientKey(name)}|${normalizeClientKey(imu)}|${normalizeClientKey(sgu)}`;
   let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   const n = (Math.abs(h) % 9000) + 1000;
   return `CL-${n}`;
+}
+
+function normalizeClientKey(value?: string) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ").replace(/[.,]/g, "");
 }
 
 export type Quarter = { year: number; q: 1 | 2 | 3 | 4 };
@@ -70,13 +75,14 @@ export interface QuarterlyTypeSummary extends TypeSummary {
 export function summarizeClients(audits: AuditRecord[], q: Quarter = currentQuarter()): ClientSummary[] {
   const byClient = new Map<string, AuditRecord[]>();
   audits.forEach((a) => {
-    const list = byClient.get(a.client) ?? [];
+    const key = `${normalizeClientKey(a.client)}||${normalizeClientKey(a.imu)}||${normalizeClientKey(a.sgu)}`;
+    const list = byClient.get(key) ?? [];
     list.push(a);
-    byClient.set(a.client, list);
+    byClient.set(key, list);
   });
 
   const out: ClientSummary[] = [];
-  byClient.forEach((list, client) => {
+  byClient.forEach((list) => {
     const first = list.slice().sort((a, b) => a.reviewDate.localeCompare(b.reviewDate))[0];
     const onboardedOn = list
       .map((a) => a.contractStartDate ?? a.reviewDate)
@@ -101,8 +107,8 @@ export function summarizeClients(audits: AuditRecord[], q: Quarter = currentQuar
     const quarterAudits = list.filter((a) => sameQuarter(quarterOf(a.reviewDate), q));
 
     out.push({
-      client,
-      clientId: clientId(client),
+      client: first.client,
+      clientId: clientId(first.client, first.imu, first.sgu),
       imu: first.imu,
       sgu: first.sgu,
       onboardedOn,
